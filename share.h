@@ -49,17 +49,42 @@ typedef struct Token {
     int length;
 } Token;
 
-extern char* file;
+typedef struct {
+    const char* file;
+    int fileSize;
+    int position;
+    int currentLine;
+    int currentColumn;
 
-extern Token *tokenArray;
-extern int count;
-extern int capacity;
+    Token* tokenArray;
+    int capacity;
+    int count;
+} LexerState;
+
+typedef enum {
+    AST_START,
+    AST_NUMBER,
+    AST_BINARY_OP,
+    AST_END,
+    // add more lol
+} ASTNodeType;
+
+typedef struct {
+    ASTNodeType type;
+
+} ASTNode;
+
+extern char* file;
 extern size_t fileSize;
 
-int lex();
+extern LexerState* main_lexer;
+
+LexerState* init_lexer(const char* fileContent, int fileSize);
+int lex(LexerState* lexer);
 void parse();
+
 void mmapInit();
-void tokenArrayInit();
 void throwError(char *message, int line, int column);
+char* literalRead(Token str, char* fmtString);
 
 #endif
