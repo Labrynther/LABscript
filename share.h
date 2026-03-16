@@ -81,6 +81,10 @@ extern LexerState* main_lexer;
 
 LexerState* init_lexer(const char* fileContent, int fileSize);
 int lex(LexerState* lexer);
+void showLex(LexerState* lexer);
+
+void macro(LexerState* lexer, Token* input, int inputCount, Token* target, int targetCount, int start);
+
 void parse();
 
 void mmapInit();

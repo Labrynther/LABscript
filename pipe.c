@@ -67,6 +67,7 @@ int main(int argc, char *argv[]){
     // Initalize the lexer and lex the main file
     main_lexer = init_lexer(file, fileSize);
     lex(main_lexer);
+    showLex(main_lexer);
 
     parse();
 

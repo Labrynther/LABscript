@@ -55,13 +55,14 @@ Token generateToken(LexerState* lexer, TokenType type, TokenLocation startPos){
         lexer->capacity = newCapacity;
     }
 
-    Token lexeme;
-    lexeme.type = type;
-    lexeme.pos.loc = startPos.loc;
-    lexeme.pos.line = startPos.line;
-    lexeme.pos.column = startPos.column;
-    lexeme.length = lexer->position - startPos.loc;
-
+    Token lexeme = {
+        .type = type,
+        .pos.loc = startPos.loc,
+        .pos.line = startPos.line,
+        .pos.column = startPos.column,
+        .length = lexer->position - startPos.loc,
+    };
+    
     lexer->tokenArray[lexer->count] = lexeme;
     lexer->count++;
 
@@ -75,10 +76,11 @@ Token scanToken(LexerState* lexer){
         changePosition(lexer);
     }
 
-    TokenLocation startPos;
-    startPos.line = lexer->currentLine;
-    startPos.column = lexer->currentColumn;
-    startPos.loc = lexer->position;
+    TokenLocation startPos = {
+        .line = lexer->currentLine,
+        .column = lexer->currentColumn,
+        .loc = lexer->position,
+    };
 
     if(lexer->position >= lexer->fileSize){
         return generateToken(lexer, TOKEN_EOF, startPos);
@@ -221,6 +223,5 @@ int lex(LexerState* lexer){
         if (eofCheck.type == TOKEN_EOF) break;
     }
 
-    showLex(lexer);
     return 0;
 }
