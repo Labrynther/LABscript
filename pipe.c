@@ -13,33 +13,29 @@ void throwError(char *message, int line, int column) {
     exit(1);
 }
 
-char* file = NULL;
-struct stat sb;
-int fd;
-size_t fileSize = 0;
+char* mmapInit(int fileDescriptor, size_t *fileSize){
+    struct stat sb;
+    if(fstat(fileDescriptor, &sb) == -1){fprintf(stderr, "Error finding file stats\n");
+        exit(1);}
+    *fileSize = sb.st_size;
 
-Token *tokenArray = NULL;
-LexerState* main_lexer = NULL;
+    char* mappedFile = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fileDescriptor, 0);
 
-void mmapInit(){
-    fstat(fd, &sb);
-    fileSize = sb.st_size;
-
-    file = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-
-    if (file == MAP_FAILED) {
+    if (mappedFile == MAP_FAILED) {
         fprintf(stderr, "\033[31mError mapping file");
-        close(fd);
+        close(fileDescriptor);
         exit(1);
     }
 
-    madvise(file, sb.st_size, MADV_SEQUENTIAL);
+    madvise(mappedFile, sb.st_size, MADV_SEQUENTIAL);
+
+    return mappedFile;
 }
 
-char* literalRead(Token str, char* fmt){
+char* literalRead(Token str, const char* sourceText, char* fmt){
     int inner_length = str.length - 2; // For Strings and Char, it calculates the length minus the outer characters.
     if(str.type == TOKEN_CHAR || str.type == TOKEN_STRING){
-        memcpy(fmt, &file[str.pos.loc + 1], inner_length);
+        memcpy(fmt, &sourceText[str.pos.loc + 1], inner_length);
         fmt[inner_length] = '\0';
     } else {
         fmt[0] = '\0';
@@ -48,35 +44,52 @@ char* literalRead(Token str, char* fmt){
     return fmt;
 }
 
+File* initFile(char* filename){
+    File* newFile = malloc(sizeof(File)); 
+
+    if (newFile == NULL) {
+        fprintf(stderr, "Memory allocation failed for File struct\n");
+        exit(1);
+    }
+    
+    newFile->filename = filename;
+    newFile->fd = open(filename, O_RDONLY);
+
+    if (newFile->fd == -1) {
+        fprintf(stderr, "Error opening file\n");
+        free(newFile);
+        exit(1);
+    }
+
+    newFile->file = mmapInit(newFile->fd, &newFile->fileSize);
+    newFile->lexer = init_lexer(newFile->file, newFile->fileSize);
+
+    return newFile;
+}
+
 int main(int argc, char *argv[]){
     if(argc != 2){
         fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
         exit(1);
     }
 
-    fd = open(argv[1], O_RDONLY);
-    if (fd == -1) {
-        perror("Error opening file");
-        exit(1);
-    }
-
     printf("\n██╗      █████╗ ██████╗ ███████╗ ██████╗██████╗ ██╗██████╗ ████████╗\n██║     ██╔══██╗██╔══██╗██╔════╝██╔════╝██╔══██╗██║██╔══██╗╚══██╔══╝\n██║     ███████║██████╔╝███████╗██║     ██████╔╝██║██████╔╝   ██║   \n██║     ██╔══██║██╔══██╗╚════██║██║     ██╔══██╗██║██╔═══╝    ██║   \n███████╗██║  ██║██████╔╝███████║╚██████╗██║  ██║██║██║        ██║   \n╚══════╝╚═╝  ╚═╝╚═════╝ ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝╚═╝        ╚═╝   \n\n");
 
-    mmapInit();
 
     // Initalize the lexer and lex the main file
-    main_lexer = init_lexer(file, fileSize);
-    lex(main_lexer);
-    showLex(main_lexer);
+    File* currentFile = initFile(argv[1]);
+    lex(currentFile->lexer);
+    showLex(currentFile->lexer);
 
     parse();
 
     // last
-    munmap(file, sb.st_size); 
-    close(fd);
+    munmap((void*)currentFile->file, currentFile->fileSize); 
+    close(currentFile->fd);
 
-    free(main_lexer->tokenArray);
-    free(main_lexer);
+    free(currentFile->lexer->tokenArray);
+    free(currentFile->lexer);
+    free(currentFile);
 
     return 0;
 }

@@ -51,14 +51,14 @@ typedef struct Token {
 
 typedef struct {
     const char* file;
-    int fileSize;
-    int position;
-    int currentLine;
-    int currentColumn;
+    size_t fileSize;
+    size_t position;
+    size_t currentLine;
+    size_t currentColumn;
 
     Token* tokenArray;
-    int capacity;
-    int count;
+    size_t capacity;
+    size_t count;
 } LexerState;
 
 typedef enum {
@@ -74,10 +74,13 @@ typedef struct {
 
 } ASTNode;
 
-extern char* file;
-extern size_t fileSize;
-
-extern LexerState* main_lexer;
+typedef struct {
+    char* filename;
+    const char* file;
+    size_t fileSize;
+    int fd;
+    LexerState* lexer;
+} File;
 
 LexerState* init_lexer(const char* fileContent, int fileSize);
 int lex(LexerState* lexer);
@@ -87,8 +90,10 @@ void macro(LexerState* lexer, Token* input, int inputCount, Token* target, int t
 
 void parse();
 
-void mmapInit();
+char* mmapInit(int fileDescriptor, size_t *fileSize);
 void throwError(char *message, int line, int column);
-char* literalRead(Token str, char* fmtString);
+char* literalRead(Token str, const char* sourceText, char* fmt);
+
+File* initFile(char* filename);
 
 #endif
