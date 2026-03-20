@@ -147,7 +147,12 @@ Token scanToken(LexerState* lexer){
         case '*': changePosition(lexer); return generateToken(lexer, TOKEN_MULTIPLY, startPos);
         case '+': changePosition(lexer); return generateToken(lexer, TOKEN_PLUS, startPos);
         case '-': changePosition(lexer); return generateToken(lexer, TOKEN_MINUS, startPos);
-        case '=': changePosition(lexer); return generateToken(lexer, TOKEN_EQUAL, startPos);
+
+        case '=': 
+            if(lexer->file[lexer->position+1] == '=') { changePosition(lexer); changePosition(lexer); return generateToken(lexer, TOKEN_ASSIGN, startPos); }
+            changePosition(lexer);
+            return generateToken(lexer, TOKEN_EQUAL, startPos);
+
         case '[': changePosition(lexer); return generateToken(lexer, TOKEN_LBRACKET, startPos);
         case ']': changePosition(lexer); return generateToken(lexer, TOKEN_RBRACKET, startPos);
         case '>': changePosition(lexer); return generateToken(lexer, TOKEN_GREATER, startPos);
@@ -203,6 +208,7 @@ void showLex(LexerState* lexer){
         "PERCENT",
         "QMARK",
         "AMPERSAND",
+        "ASSIGNMENT",
         "EOF",
         "UNKNOWN"
     };

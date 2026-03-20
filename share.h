@@ -32,6 +32,7 @@ typedef enum {
     TOKEN_PERCENT,
     TOKEN_QMARK,
     TOKEN_AMPERSAND,
+    TOKEN_ASSIGN,
     // Special Characters
     TOKEN_EOF,
     TOKEN_UNKNOWN
