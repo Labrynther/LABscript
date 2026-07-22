@@ -1,0 +1,3 @@
+obj foo <- [myList, "mytext", 500];
+
+print <- foo[3];
