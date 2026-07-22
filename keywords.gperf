@@ -1,0 +1,40 @@
+%{
+#include "tokens.h"
+%}
+
+%language=ANSI-C
+%readonly-tables
+%global-table
+%struct-type
+%compare-strncmp
+
+struct keyword {const char *name; StateType state;};
+
+%%
+obj, IDENTIFIER_OBJ
+struct, IDENTIFIER_STRUCT
+enum, IDENTIFIER_ENUM
+namespace, IDENTIFIER_NAMESPACE
+return, IDENTIFIER_RETURN
+macro, IDENTIFIER_MACRO
+pragma, IDENTIFIER_PRAGMA
+targer, PRAGMA_TARGET
+optimize, PRAGMA_OPTIMIZE
+diagnostic, PRAGMA_DIAGNOSTIC
+quiet, PRAGMA_QUIET
+strict, PRAGMA_STRICT
+ptr, IDENTIFIER_REFERENCE
+dfr, IDENTIFIER_DEFERENCE
+int, TYPE_INT
+char, TYPE_CHAR
+float, TYPE_FLOAT
+double, TYPE_DOUBLE
+bool, TYPE_BOOL
+const, TYPE_CONST
+private, TYPE_PRIVATE
+NOT, IDENTIFIER_NOT
+OR, IDENTIFIER_OR
+AND, IDENTIFIER_AND
+XOR, IDENTIFIER_XOR
+BITWISE, IDENTIFIER_BITWISE
+%%
