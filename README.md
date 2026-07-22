@@ -43,6 +43,7 @@ or
 We will be back to this shortly, but We need to introduce a new concept: objects.
 
 ```obj foo <- 1.5;```
+
 ---
 ### What is an object?
 An object can hold any type of data, be changed to any type, essentially javascript’s var, but with a lot more features.
