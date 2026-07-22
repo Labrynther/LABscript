@@ -1,4 +1,4 @@
-# LABscript (Outdated, will update later)
+# LABscript
 *the following is more of a tutorial/specification, will change later, this is slightly outdated to the current syntax of the language*
 
 LABscript is a special dataflow programming language.
