@@ -1,42 +1,72 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 
 #include "share.h"
 
-bool tokensMatch(LexerState* lexer, Token a, Token b){
+bool tokensMatch(ParserState* parser, Token a, Token b) {
     if (a.type != b.type) return false;
-    if(a.type == TOKEN_IDENTIFIER || a.type == TOKEN_NUMBER || a.type == TOKEN_STRING || a.type == TOKEN_CHAR) {
-        if (a.length != b.length) {
+    if (a.type == TOKEN_IDENTIFIER || a.type == TOKEN_LITERAL) {
+        if (a.pos.length != b.pos.length) {
             return false;
         }
 
-        if (strncmp(&lexer->file[a.pos.loc], &lexer->file[b.pos.loc], a.length) != 0) return false;
+        if (strncmp(&parser->file[a.pos.loc], &parser->file[b.pos.loc], a.pos.length) != 0) {
+            return false;
+        }
     }
 
     return true;
 }
 
-void splice(LexerState* lexer, int startIndex, int targetCount, Token* input, int inputCount) {
-    Token* tokenRealloc = realloc(lexer->tokenArray, (inputCount - targetCount + lexer->count) * sizeof(Token));
-    if(tokenRealloc == NULL) { fprintf(stderr, "\033[31mFailed to reallocated memory for Macro"); exit(1); }
-    lexer->tokenArray = tokenRealloc;
+// TODO: Revamp macroing that rebuilds tokenArray once per macro, instead of constantly using memmove
 
-    memmove(&lexer->tokenArray[startIndex + inputCount], &lexer->tokenArray[startIndex + targetCount], (lexer->count - (startIndex + targetCount)) * sizeof(Token));
-    memcpy(&lexer->tokenArray[startIndex], input, inputCount * sizeof(Token));
+void splice(ParserState* parser, int startIndex, int patternCount, Token* replacement, int replacementCount) {
+    int delta = replacementCount - patternCount;
+    int newCount = parser->count + delta;
 
-    lexer->count = lexer->count - targetCount + inputCount;
+    if (delta > 0) {
+        parser->tokenArray = reallocate(parser->tokenArray, newCount * sizeof(Token));
+    }
+
+    int tailCount = parser->count - (startIndex + patternCount);
+    if (tailCount > 0) {
+        memmove(&parser->tokenArray[startIndex + replacementCount], 
+                &parser->tokenArray[startIndex + patternCount], 
+                tailCount * sizeof(Token));
+    }
+
+    if (replacementCount > 0) {
+        memcpy(&parser->tokenArray[startIndex], replacement, replacementCount * sizeof(Token));
+    }
+
+    if (delta < 0) {
+        parser->tokenArray = reallocate(parser->tokenArray, newCount * sizeof(Token));
+    }
+
+    parser->count = newCount;
+
+    if (startIndex < parser->current) {
+        parser->current += delta;
+    }
 }
 
-void macro(LexerState* lexer, Token* input, int inputCount, Token* target, int targetCount, int start){
-    for(int i = start; i < lexer->count - targetCount; i++){
-        for(int j = 0; j < targetCount; j++){
-            if(!tokensMatch(lexer, target[j], lexer->tokenArray[i+j])) break;
-            if(j == targetCount - 1){
-                splice(lexer, i, targetCount, input, inputCount);
-                i += inputCount - 1; 
+void macro(ParserState* parser, Token* pattern, int patternCount, Token* replacement, int replacementCount, int start) {
+    if (patternCount <= 0) return;
+
+    for (int i = start; i <= parser->count - patternCount; i++) {
+        bool matched = true;
+
+        for (int j = 0; j < patternCount; j++) {
+            if (!tokensMatch(parser, pattern[j], parser->tokenArray[i + j])) {
+                matched = false;
+                break;
             }
+        }
+
+        if (matched) {
+            splice(parser, i, patternCount, replacement, replacementCount);
+            // Ensure i advances by at least 1 even if replacementCount is 0
+            i += (replacementCount > 0) ? (replacementCount - 1) : 0; 
         }
     }
 }
