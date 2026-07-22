@@ -11,9 +11,11 @@ It is **NOT** finished (most of the features in the tutorial have not been imple
 ## Install instructions
 1. Clone the repo
 2. Open the folder in a terminal
-3. type and run: ```make```
-4. go to the tests folder: ```cd tests```
-5. execute programs like this: ```../builds/LABscript myProgram.lab``` (replace myProgram with programs of your choice)
+3. type and run: ```cmake -S . -B builds```
+4. go to the builds folder: ```cd builds```
+5. compile: ```cmake --build build```
+7. go to the tests folder: ```cd ../tests```
+8. execute programs like this: ```../builds/LABscript myProgram.lab``` (replace myProgram with programs of your choice)
 ---
 ### Hello World program:
 ```print <- “Hello World”;```
