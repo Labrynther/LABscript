@@ -73,6 +73,7 @@ Special types of literals can also be put inside objects, lists (tuples) and pro
 Lists can be indexed just like arrays:
 
 ```print <- myList[1]; // Will output 3.6```
+
 ---
 ### Procedures:
 	
