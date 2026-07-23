@@ -12,7 +12,6 @@ It is **NOT** finished (most of the features in the tutorial have not been imple
 1. Clone the repo
 2. Open the folder in a terminal
 3. type and run: ```cmake -S . -B builds```
-4. go to the builds folder: ```cd builds```
 5. compile: ```cmake --build build```
 7. go to the tests folder: ```cd ../tests```
 8. execute programs like this: ```../builds/LABscript myProgram.lab``` (replace myProgram with programs of your choice)
@@ -112,15 +111,8 @@ Or
 
 ```obj myFourthProcedure <- ||int a|| ||bool b…|| {/* Code */};```
 
-There can be more arguments after an infinite one, ONLY IF the infinite bucket and the one after that has a fixed type:
 
-```obj myFourthProcedure <- ||int a|| ||bool b…|| ||int c|| {/* Code */};```
-
-We can call the variadic functions like this:
-
-```myFourthProcedure <- 1 | true | false | 3;```
-
-If the last one did not exist, and the infinite bucket was the last element, to end it, We can do this:
+We can call variadic functions like this:
 
 ```myFourthProcedure <- 1 | true | false | true | ();```
 
