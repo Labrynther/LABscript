@@ -79,7 +79,7 @@ ParserState* initParser(char* filename, int fileSize, const char* file, Token* t
     return initParse;
 }
 
-static inline Token tokenPeek(size_t n, ParserState* parser) {
+static inline Token tokenPeek(int n, ParserState* parser) {
     if ((parser->current + n) >= parser->count) {
         Token eofToken = {0};
         eofToken.type = TOKEN_EOF;
@@ -90,7 +90,12 @@ static inline Token tokenPeek(size_t n, ParserState* parser) {
 }
 
 static inline Token previous(ParserState* parser) {
-    return parser->tokenArray[parser->current - 1];
+    if(parser->current > 0) {
+        return parser->tokenArray[parser->current - 1];
+    }
+
+    Token nullToken = {0};
+    return nullToken;
 }
 
 static inline bool isAtEnd(ParserState* parser) {
@@ -133,7 +138,12 @@ static inline bool matchState(StateType state, ParserState* parser) {
 }
 
 static inline bool matchToken(TokenType type, StateType state, ParserState* parser) {
-    return matchState(state, parser) && matchType(type, parser);
+    if (checkState(state, parser) && checkType(type, parser)) {
+        advance(parser);
+        return true;
+    }
+    
+    return false;
 }
 
 static inline bool checkToken(TokenType type, StateType state, ParserState* parser) {
@@ -292,6 +302,7 @@ ParseRule fetchRule(Token token) {
             } 
             break;
         case TOKEN_DOT:
+        case TOKEN_SCOPE_RESOLVE:
             rule.infix = parseMemberAccess;
             rule.rank = PREC_PRIMARY;
             break;
@@ -443,7 +454,7 @@ ASTNode* parsePipe(ASTNode* left, ParserState* parser) {
     PipelineNode* node = allocNode(parser->nodePages, sizeof(PipelineNode));
     node->base.type = AST_PIPE;
     node->base.mainToken = previous(parser);
-    parser->directionBuffer = reallocate(parser->directionBuffer, parser->elementBufferCapacity);
+    parser->directionBuffer = reallocate(parser->directionBuffer, parser->elementBufferCapacity * sizeof(ASTNode*));
     
     int elemIdx = parser->elementBufferCount;
     int dirIdx = parser->directionBufferCount;
@@ -457,16 +468,16 @@ ASTNode* parsePipe(ASTNode* left, ParserState* parser) {
 
     while (true) {
         if (parser->elementBufferCount >= parser->elementBufferCapacity) {
-            parser->elementBuffer = reallocate(parser->elementBuffer, parser->elementBufferCapacity += BUFFER_SIZE);
-            parser->directionBuffer = reallocate(parser->directionBuffer, parser->elementBufferCapacity);
-            parser->pipeTypeBuffer = reallocate(parser->pipeTypeBuffer, parser->elementBufferCapacity);
-            parser->opBuffer = reallocate(parser->opBuffer, parser->elementBufferCapacity);
+            parser->elementBuffer = reallocate(parser->elementBuffer, (parser->elementBufferCapacity += BUFFER_SIZE) * sizeof(ASTNode*));
+            parser->directionBuffer = reallocate(parser->directionBuffer, parser->elementBufferCapacity * sizeof(StateType));
+            parser->pipeTypeBuffer = reallocate(parser->pipeTypeBuffer, parser->elementBufferCapacity * sizeof(TokenType));
+            parser->opBuffer = reallocate(parser->opBuffer, parser->elementBufferCapacity * sizeof(StateType));
         }
 
-        TokenType currentPipe = tokenPeek(-1, parser).type;
-        StateType currentState = tokenPeek(-1, parser).state;
+        TokenType currentPipe = previous(parser).type;
+        StateType currentState = previous(parser).state;
 
-        if (tokenPeek(-1, parser).type == TOKEN_PIPE || tokenPeek(-1, parser).type == TOKEN_ASSIGN_PIPE) {
+        if (currentPipe == TOKEN_PIPE || currentPipe== TOKEN_ASSIGN_PIPE) {
             parser->directionBuffer[parser->directionBufferCount++] = currentState;
             parser->pipeTypeBuffer[parser->pipeTypeBufferCount++] = currentPipe;
             parser->opBuffer[parser->opBufferCount++] = NONE;
@@ -528,7 +539,7 @@ ASTNode* parsePrefixUnary (ParserState* parser) {
 ASTNode* parsePostfixUnary(ASTNode* left, ParserState* parser) {
     UnaryOpNode* node = allocNode(parser->nodePages, sizeof(UnaryOpNode));
 
-    node->base.mainToken = tokenPeek(0, parser);
+    node->base.mainToken = previous(parser);
     node->base.type = AST_UNARY_OP;
     node->operand = left;
     node->isPostfix = true;
@@ -566,7 +577,15 @@ ASTNode* parseMemberAccess(ASTNode* left, ParserState* parser) {
     MemberAccessNode* node = allocNode(parser->nodePages, sizeof(MemberAccessNode));
 
     node->base.mainToken = previous(parser);
-    node->base.type = AST_MEMBER_ACCESS;
+    switch (node->base.mainToken.type) {
+        case TOKEN_DOT:
+            node->base.type = AST_MEMBER_ACCESS;
+            break;
+        case TOKEN_SCOPE_RESOLVE:
+            node->base.type = AST_SCOPE_RESOLVE;
+            break;
+    }
+
     node->left = left;
     node->property = consume(TOKEN_IDENTIFIER, -1, parser);
 
@@ -586,7 +605,7 @@ ASTNode* parseList (ParserState* parser) {
     } else {
         do {
             if (parser->elementBufferCount >= parser->elementBufferCapacity) {
-                parser->elementBuffer = reallocate(parser->elementBuffer, parser->elementBufferCapacity += BUFFER_SIZE);
+                parser->elementBuffer = reallocate(parser->elementBuffer, (parser->elementBufferCapacity += BUFFER_SIZE) * sizeof(ASTNode*));
             }
 
             parser->elementBuffer[parser->elementBufferCount++] = parsePrecedence(PREC_NONE, parser);
@@ -626,7 +645,7 @@ ASTNode* parseCast (ParserState* parser) {
     } else {
         do {
             if (parser->castBufferCount >= parser->castBufferCapacity) {
-                parser->castBuffer = reallocate(parser->castBuffer, parser->castBufferCapacity += BUFFER_SIZE);
+                parser->castBuffer = reallocate(parser->castBuffer, (parser->castBufferCapacity += BUFFER_SIZE) * sizeof(StateType));
             }
 
             parser->castBuffer[parser->castBufferCount] = consume(TOKEN_IDENTIFIER, -1, parser);
@@ -669,7 +688,7 @@ ASTNode* parseBucket(ParserState* parser) {
     } else {
         do {
             if (parser->elementBufferCount >= parser->elementBufferCapacity) {
-                parser->elementBuffer = reallocate(parser->elementBuffer, parser->elementBufferCapacity += BUFFER_SIZE);
+                parser->elementBuffer = reallocate(parser->elementBuffer, (parser->elementBufferCapacity += BUFFER_SIZE) * sizeof(ASTNode*));
             }
 
             parser->elementBuffer[parser->elementBufferCount++] = parsePrecedence(PREC_NONE, parser);
@@ -708,12 +727,13 @@ ASTNode* parseProc(ParserState* parser) {
     node->base.mainToken = previous(parser);
 
     if (checkToken(TOKEN_BRACE, RIGHT, parser)) {
-            node->statementCount = 0;
+        node->statementCount = 0;
+        node->statements = NULL;
         advance(parser);
     } else {
         do {
             if (parser->elementBufferCount >= parser->elementBufferCapacity) {
-                parser->elementBuffer = reallocate(parser->elementBuffer, parser->elementBufferCapacity += BUFFER_SIZE);
+                parser->elementBuffer = reallocate(parser->elementBuffer, (parser->elementBufferCapacity += BUFFER_SIZE) * sizeof(ASTNode*));
             }
 
             parser->elementBuffer[parser->elementBufferCount++] = parsePrecedence(PREC_NONE, parser);
@@ -741,8 +761,13 @@ ASTNode* parseCompileTime(ParserState* parser) {
                 StateType pragmaType = typeToken.state;
                 Token pragmaValue = {0};
 
-                if (pragmaType == PRAGMA_OPTIMIZE || pragmaType == PRAGMA_TARGET) {
-                    pragmaValue = advance(parser);
+                switch(pragmaType) {
+                    case PRAGMA_TARGET:
+                        pragmaValue = consume(TOKEN_IDENTIFIER, -1, parser);
+                        break;
+                    case PRAGMA_OPTIMIZE:
+                        pragmaValue = consume(TOKEN_LITERAL, LITERAL_NUMBER, parser);
+                        break;
                 }
 
                 if (parser->pragmaCount >= parser->pragmaCapacity) {
@@ -911,8 +936,9 @@ void showAST(ParserState* parser, ASTNode* node, int depth) {
             }
             break;
 
-        case AST_MEMBER_ACCESS: {
-            printf("MEMBER ACCESS:\n");
+        case AST_MEMBER_ACCESS:
+        case AST_SCOPE_RESOLVE: {
+            printf("%s:\n", node->type == AST_MEMBER_ACCESS ? "MEMBER ACCESS" : "SCOPE RESOLUTION");
             printIndent(depth + 1);
             printf("Target:\n");
             showAST(parser, ((MemberAccessNode*)node)->left, depth + 2);
@@ -967,7 +993,9 @@ int parse(File *file) {
         }
 
         ASTNode* node =  parsePrecedence(PREC_NONE, file->parser);
-        file->parser->elementBuffer[file->parser->elementBufferCount++] = node;
+        if (node != NULL) {
+            file->parser->elementBuffer[file->parser->elementBufferCount++] = node;
+        }
 
         consume(TOKEN_SEMICOLON, -1, file->parser);
     }

@@ -42,6 +42,7 @@ typedef enum {
 
     // Operations & Access
     AST_MEMBER_ACCESS,
+    AST_SCOPE_RESOLVE,
     AST_BINARY_OP, // a + b, a - b, a * b, a / b
     AST_UNARY_OP, // a++, a--
     AST_INDEX,
@@ -166,7 +167,6 @@ typedef struct {
     ASTNode base;
 
     ASTNode** elements;
-    TokenType* pipeType;
     StateType* directions;
     TokenType* pipeTypes;
     StateType* operations;

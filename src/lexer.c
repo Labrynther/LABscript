@@ -124,6 +124,14 @@ Token scanToken(LexerState* lexer) {
             changePosition(1, lexer);
             return generateToken(TOKEN_DOT, NONE, startPos, lexer);
 
+        case ':':
+            if(charPeek(1, lexer) == ':') {
+                return generateToken(TOKEN_SCOPE_RESOLVE, NONE, startPos, lexer);
+            }
+
+            changePosition(1, lexer);
+            return generateToken(TOKEN_COLON, NONE, startPos, lexer);
+
         case '<':
             if(charPeek(1, lexer) == '-') {
                 changePosition(2, lexer);
@@ -204,9 +212,7 @@ Token scanToken(LexerState* lexer) {
         case '/':
             // Handle Comments
             if(charPeek(1, lexer) == '/') {
-                while(lexer->currentChar != '\n') {
-                    changePosition(1, lexer);
-                }
+                while((lexer->currentChar != '\n') && changePosition(1, lexer));
                 goto continueScan;
             } else if (charPeek(1, lexer) == '*') {
                 changePosition(2, lexer);
@@ -236,7 +242,6 @@ Token scanToken(LexerState* lexer) {
             goto checkAssignments;
 
         case ';': changePosition(1, lexer); return generateToken(TOKEN_SEMICOLON, NONE, startPos, lexer);
-        case ':': changePosition(1, lexer); return generateToken(TOKEN_COLON, NONE, startPos, lexer);
         case ',': changePosition(1, lexer); return generateToken(TOKEN_COMMA, NONE, startPos, lexer);
         case '(': changePosition(1, lexer); return generateToken(TOKEN_PAREN, NONE, startPos, lexer);
         case ')': changePosition(1, lexer); return generateToken(TOKEN_PAREN, NONE, startPos, lexer);
@@ -251,8 +256,8 @@ Token scanToken(LexerState* lexer) {
         case '$': changePosition(1, lexer); return generateToken(TOKEN_DOLLAR, NONE, startPos, lexer);
 
         default:
-            if (isalpha(lexer->currentChar) || lexer->currentChar == '_') {
-                while(isalnum(lexer->currentChar) || lexer->currentChar == '_') {
+            if (isalpha((unsigned char)lexer->currentChar) || lexer->currentChar == '_') {
+                while(isalnum((unsigned char)lexer->currentChar) || lexer->currentChar == '_') {
                     changePosition(1, lexer);
                 }
 

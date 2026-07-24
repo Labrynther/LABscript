@@ -287,6 +287,7 @@ char *tokenTypeLabels[] = {
     [TOKEN_OCTOTHROPE] = "OCTOTHROPE",
     [TOKEN_AMPERSAND] = "AMPERSAND",
     [TOKEN_ELLIPSIS] = "ELLIPSIS",
+    [TOKEN_SCOPE_RESOLVE] = "SCOPE_RESOLUTION",
 
     [TOKEN_EOF] = "EOF",
     [TOKEN_UNKNOWN] = "UNKNOWN"
@@ -322,6 +323,7 @@ char *stateTypeLabels[] = {
     [TYPE_DOUBLE] = "DOUBLE",
     [TYPE_BOOL] = "BOOL",
     [TYPE_CONST] = "CONST",
+    [TYPE_POINTER] = "POINTER",
     [TYPE_PRIVATE] = "PRIVATE",
 
     [LITERAL_NUMBER] = "NUMBER",
@@ -402,6 +404,7 @@ void throwError(char* filename, int fileSize, const char* file, TokenLocation lo
     memcpy(errors->errorArray[errors->errorCount].context, temp, contextLength + 1);
     
     errors->errorArray[errors->errorCount].errorType = errorCode;
+    errors->errorArray[errors->errorCount].info = info;
     errors->errorArray[errors->errorCount].errorClass = errorClass;
 
     errors->errorArray[errors->errorCount].location = location;

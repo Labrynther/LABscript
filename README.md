@@ -12,8 +12,8 @@ It is **NOT** finished (most of the features in the tutorial have not been imple
 1. Clone the repo
 2. Open the folder in a terminal
 3. type and run: ```cmake -S . -B builds```
-5. compile: ```cmake --build build```
-7. go to the tests folder: ```cd ../tests```
+5. compile: ```cmake --build builds```
+7. go to the tests folder: ```cd tests```
 8. execute programs like this: ```../builds/LABscript myProgram.lab``` (replace myProgram with programs of your choice)
 ---
 ### Hello World program:
@@ -127,7 +127,7 @@ myFourthProcedure <- (); // Finished!
 If it were to have optional arguments, or the last argument isn’t an infinite bucket, then once all of them are filled, it automatically goes through without having to pipe “()”.
 
 ---
-### struct:
+### Structs:
 ```
 struct myStruct <- (
 	obj n,
@@ -147,7 +147,7 @@ namespace myNamespace <- {
 ```
 We can call an object, and that object can call whatever objects, like a chain reaction:
 
-```print <- myNamespace.myFunc; // prints “2”```
+```print <- myNamespace::myFunc; // prints “2”```
 
 This is the very very basic breakdown of my language, there are many more nuances and features I haven’t covered here yet.
 
